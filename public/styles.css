@@ -1,0 +1,192 @@
+/* ===== Reset base ===== */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f7f7f7;
+  color: #222;
+}
+
+/* ===== Layout ===== */
+header {
+  background: #3949ab;
+  color: white;
+  padding: 1rem;
+}
+header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+header .subtitle {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.layout {
+  display: flex;
+  min-height: calc(100vh - 60px);
+}
+
+aside {
+  width: 250px;
+  background: #fff;
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+aside h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
+aside ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+aside li {
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+aside li:hover {
+  background: #eee;
+}
+aside li.active {
+  background: #3949ab;
+  color: white;
+}
+
+aside .panel {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #ddd;
+}
+aside .panel h3 {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+
+.content {
+  flex: 1;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+/* ===== Toolbar & Pager ===== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+.toolbar input {
+  flex: 1;
+  padding: 0.4rem;
+}
+.toolbar select, .toolbar button {
+  padding: 0.4rem 0.6rem;
+}
+.pager {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* ===== Tables ===== */
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 0.5rem;
+  background: white;
+}
+.table th, .table td {
+  border: 1px solid #ddd;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.table th {
+  background: #eee;
+}
+.table tr:nth-child(even) {
+  background: #fafafa;
+}
+
+/* ===== Forms ===== */
+.form-field {
+  margin-bottom: 0.6rem;
+  display: flex;
+  flex-direction: column;
+}
+.form-field label {
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
+}
+.form-field input, 
+.form-field select {
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.actions {
+  margin-top: 0.8rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  background: #3949ab;
+  color: white;
+  font-size: 0.9rem;
+}
+button:hover {
+  background: #303f9f;
+}
+button:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+/* ===== Row actions ===== */
+.row-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+.row-actions button {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  background: #666;
+}
+.row-actions button:hover {
+  background: #000;
+}
+
+/* ===== Badge (per ID FK) ===== */
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.3rem;
+  background: #eee;
+  color: #333;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  margin-left: 0.3rem;
+}
+
+/* ===== Footer ===== */
+footer {
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #666;
+  border-top: 1px solid #ddd;
+  background: #fafafa;
+}
