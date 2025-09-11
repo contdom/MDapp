@@ -1,4 +1,4 @@
-import { inputTypeFor, collectAndValidateForm, updatePager } from './utils.js';
+import { inputTypeFor, updatePager } from './utils.js';
 
 let state = {
   tables: [],
@@ -8,10 +8,11 @@ let state = {
   q: '',
   limit: 50,
   offset: 0,
-  total: 0,
-  mode: 'insert',
-  editingPkValue: null
+  total: 0
 };
+
+let editMode = false;
+let pendingChanges = []; // { type:'update'|'insert', pk, data:{} }
 
 export function initCrud() {
   loadTables();
@@ -34,11 +35,25 @@ async function loadTables() {
 }
 
 function bindToolbar() {
+  const $search = document.getElementById('search');
+
   document.getElementById('btn-apply-filter').onclick = () => {
-    state.q = document.getElementById('search').value.trim();
+    state.q = $search.value.trim();
     state.offset = 0;
     if (state.currentTable) loadRows(state.currentTable);
   };
+
+  // ❌ nuovo bottone elimina filtro
+  const btnClear = document.createElement('button');
+  btnClear.id = 'btn-clear-filter';
+  btnClear.textContent = '❌ Rimuovi filtro';
+  btnClear.onclick = () => {
+    $search.value = '';
+    state.q = '';
+    state.offset = 0;
+    if (state.currentTable) loadRows(state.currentTable);
+  };
+  document.querySelector('.toolbar').appendChild(btnClear);
 
   document.getElementById('page-size').onchange = (e) => {
     state.limit = parseInt(e.target.value, 10);
@@ -59,6 +74,25 @@ function bindToolbar() {
   document.getElementById('refresh').onclick = () => {
     if (state.currentTable) loadRows(state.currentTable);
   };
+
+  // toggle edit mode
+  const btnToggle = document.createElement('button');
+  btnToggle.id = 'toggle-edit';
+  btnToggle.textContent = '✏️ Modifica tabella';
+  btnToggle.onclick = () => {
+    editMode = !editMode;
+    document.getElementById('save-changes').style.display = editMode ? 'inline-block' : 'none';
+    loadRows(state.currentTable);
+  };
+  document.querySelector('#table-header').appendChild(btnToggle);
+
+  // save button
+  const btnSave = document.createElement('button');
+  btnSave.id = 'save-changes';
+  btnSave.textContent = '💾 Salva modifiche';
+  btnSave.style.display = 'none';
+  btnSave.onclick = saveChanges;
+  document.querySelector('#table-header').appendChild(btnSave);
 }
 
 async function selectTable(table) {
@@ -68,7 +102,6 @@ async function selectTable(table) {
 
   await loadSchema(table);
   await loadRows(table);
-  await renderForm(table);
 }
 
 async function loadSchema(table) {
@@ -89,18 +122,20 @@ async function loadRows(table) {
   const res = await fetch(`/api/rows/${table}?${params.toString()}`);
   const data = await res.json();
   state.total = data.total || 0;
+
   renderRows(data.rows || []);
   updatePager(state.offset, state.limit, state.total);
 }
 
 function renderRows(rows) {
   const $rows = document.getElementById('rows');
-  if (!rows.length) {
+  if (!rows.length && !editMode) {
     $rows.innerHTML = '<div>Nessuna riga trovata.</div>';
     return;
   }
 
-  const cols = Object.keys(rows[0]);
+  const cols = state.schema.columns.map(c => c.name);
+  const pkCol = state.schema.columns.find(c => c.pk === 1)?.name || 'id';
   const fkCols = new Set((state.schema.foreignKeys || []).map(f => f.from));
 
   const table = document.createElement('table');
@@ -114,9 +149,11 @@ function renderRows(rows) {
     th.textContent = c;
     trh.appendChild(th);
   }
-  const thAct = document.createElement('th');
-  thAct.textContent = 'Azioni';
-  trh.appendChild(thAct);
+  if (editMode) {
+    const th = document.createElement('th');
+    th.textContent = 'Azioni';
+    trh.appendChild(th);
+  }
   thead.appendChild(trh);
   table.appendChild(thead);
 
@@ -126,37 +163,83 @@ function renderRows(rows) {
     const tr = document.createElement('tr');
     for (const c of cols) {
       const td = document.createElement('td');
-      if (fkCols.has(c)) {
-        const label = state.fkMap[c]?.options.find(o => String(o.id) === String(r[c]))?.label ?? r[c];
-        td.textContent = label;
-        const badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = String(r[c]);
-        td.appendChild(document.createTextNode(' '));
-        td.appendChild(badge);
+      if (editMode && c !== pkCol) {
+        if (fkCols.has(c)) {
+          const select = document.createElement('select');
+          state.fkMap[c].options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.id;
+            o.textContent = opt.label;
+            if (String(opt.id) === String(r[c])) o.selected = true;
+            select.appendChild(o);
+          });
+          select.onchange = () => markChange('update', r[pkCol], c, select.value);
+          td.appendChild(select);
+        } else {
+          const input = document.createElement('input');
+          input.type = inputTypeFor(state.schema.columns.find(col => col.name === c).type);
+          input.value = r[c] ?? '';
+          input.onchange = () => markChange('update', r[pkCol], c, input.value);
+          td.appendChild(input);
+        }
       } else {
         td.textContent = r[c];
       }
       tr.appendChild(td);
     }
 
-    // azioni
-    const tdAct = document.createElement('td');
-    tdAct.className = 'row-actions';
+    // azioni (delete)
+    if (editMode) {
+      const tdAct = document.createElement('td');
+      const btnDel = document.createElement('button');
+      btnDel.textContent = '🗑️';
+      btnDel.title = 'Elimina riga';
+      btnDel.onclick = () => deleteRow(r[pkCol]);
+      tdAct.appendChild(btnDel);
+      tr.appendChild(tdAct);
+    }
 
-    const btnEdit = document.createElement('button');
-    btnEdit.textContent = '✏️';
-    btnEdit.title = 'Modifica';
-    btnEdit.onclick = () => editRow(r);
-
-    const btnDel = document.createElement('button');
-    btnDel.textContent = '🗑️';
-    btnDel.title = 'Elimina';
-    btnDel.onclick = () => deleteRow(r);
-
-    tdAct.append(btnEdit, btnDel);
-    tr.appendChild(tdAct);
     tbody.appendChild(tr);
+  }
+
+  // nuova riga
+  if (editMode) {
+    const trNew = document.createElement('tr');
+    trNew.className = 'new-row';
+    const newRowData = {};
+    for (const c of cols) {
+      if (c === pkCol) { // saltiamo ID autoincrement
+        trNew.appendChild(document.createElement('td'));
+        continue;
+      }
+      const td = document.createElement('td');
+      if (fkCols.has(c)) {
+        const select = document.createElement('select');
+        const empty = document.createElement('option');
+        empty.value = '';
+        empty.textContent = '--';
+        select.appendChild(empty);
+        state.fkMap[c].options.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.id;
+          o.textContent = opt.label;
+          select.appendChild(o);
+        });
+        select.onchange = () => { newRowData[c] = select.value || null; };
+        td.appendChild(select);
+      } else {
+        const input = document.createElement('input');
+        input.type = inputTypeFor(state.schema.columns.find(col => col.name === c).type);
+        input.onchange = () => { newRowData[c] = input.value.trim() || null; };
+        td.appendChild(input);
+      }
+      trNew.appendChild(td);
+    }
+    // colonna azioni (vuota per nuova riga)
+    trNew.appendChild(document.createElement('td'));
+    tbody.appendChild(trNew);
+
+    pendingChanges.push({ type: 'insert', data: newRowData });
   }
 
   table.appendChild(tbody);
@@ -164,141 +247,55 @@ function renderRows(rows) {
   $rows.appendChild(table);
 }
 
-async function renderForm(table) {
-  state.mode = 'insert';
-  state.editingPkValue = null;
-
-  const { columns, foreignKeys } = state.schema;
-  const pk = columns.find(c => c.pk === 1)?.name || 'id';
-  const writable = columns.filter(c => c.name !== pk);
-
-  const form = document.createElement('form');
-  form.id = 'upsert-form';
-
-  for (const col of writable) {
-    const field = document.createElement('div');
-    field.className = 'form-field';
-
-    const label = document.createElement('label');
-    label.textContent = col.name + (col.notnull ? ' *' : '');
-    label.setAttribute('for', `f_${col.name}`);
-
-    const fk = foreignKeys.find(f => f.from === col.name);
-    if (fk && state.fkMap[col.name]) {
-      const select = document.createElement('select');
-      select.name = col.name;
-      select.id = `f_${col.name}`;
-      select.required = !!col.notnull;
-
-      const empty = document.createElement('option');
-      empty.value = '';
-      empty.textContent = '-- seleziona --';
-      select.appendChild(empty);
-
-      for (const opt of state.fkMap[col.name].options) {
-        const o = document.createElement('option');
-        o.value = opt.id;
-        o.textContent = opt.label ?? opt.id;
-        select.appendChild(o);
-      }
-      field.append(label, select);
-    } else {
-      const input = document.createElement('input');
-      input.name = col.name;
-      input.id = `f_${col.name}`;
-      input.type = inputTypeFor(col.type);
-      input.placeholder = col.type || 'TEXT';
-      if (input.type === 'number') input.step = 'any';
-      input.required = !!col.notnull;
-      field.append(label, input);
-    }
-    form.appendChild(field);
+function markChange(type, pk, col, value) {
+  let change = pendingChanges.find(c => c.type === type && c.pk === pk);
+  if (!change) {
+    change = { type, pk, data: {} };
+    pendingChanges.push(change);
   }
-
-  const actions = document.createElement('div');
-  actions.className = 'actions';
-
-  const btnSubmit = document.createElement('button');
-  btnSubmit.textContent = 'Inserisci';
-
-  const btnReset = document.createElement('button');
-  btnReset.type = 'button';
-  btnReset.textContent = 'Reset';
-  btnReset.onclick = () => {
-    form.reset();
-    state.mode = 'insert';
-    state.editingPkValue = null;
-    btnSubmit.textContent = 'Inserisci';
-  };
-
-  actions.append(btnSubmit, btnReset);
-  form.appendChild(actions);
-
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    const payload = collectAndValidateForm(form, state.schema);
-    if (payload === null) return;
-
-    let url = `/api/rows/${state.currentTable}`;
-    let method = 'POST';
-    if (state.mode === 'update' && state.editingPkValue != null) {
-      url = `/api/rows/${state.currentTable}/${state.editingPkValue}`;
-      method = 'PUT';
-    }
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      alert('Errore: ' + (data.error || ''));
-      return;
-    }
-
-    form.reset();
-    state.mode = 'insert';
-    state.editingPkValue = null;
-    btnSubmit.textContent = 'Inserisci';
-    await loadRows(state.currentTable);
-  };
-
-  const $formArea = document.getElementById('form-area');
-  $formArea.innerHTML = '';
-  const title = document.createElement('h3');
-  title.textContent = 'Nuovo inserimento / Modifica';
-  $formArea.append(title, form);
+  change.data[col] = value;
 }
 
-function editRow(row) {
-  const pk = state.schema.columns.find(c => c.pk === 1)?.name || 'id';
-  state.mode = 'update';
-  state.editingPkValue = row[pk];
-
-  const form = document.getElementById('upsert-form');
-  for (const c of state.schema.columns) {
-    if (c.pk) continue;
-    const el = form.querySelector(`[name="${c.name}"]`);
-    if (!el) continue;
-    const val = row[c.name];
-    if (el.tagName === 'SELECT') el.value = val ?? '';
-    else el.value = val ?? '';
-  }
-  form.querySelector('button[type="submit"]').textContent = 'Aggiorna';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-async function deleteRow(row) {
-  const pk = state.schema.columns.find(c => c.pk === 1)?.name || 'id';
-  if (!confirm(`Eliminare la riga con ${pk}=${row[pk]}?`)) return;
-
-  const res = await fetch(`/api/rows/${state.currentTable}/${row[pk]}`, { method: 'DELETE' });
-  const data = await res.json();
+async function deleteRow(pk) {
+  if (!confirm(`Eliminare la riga con ID=${pk}?`)) return;
+  const res = await fetch(`/api/rows/${state.currentTable}/${pk}`, { method: 'DELETE' });
   if (!res.ok) {
-    alert('Errore: ' + (data.error || ''));
-    return;
+    const err = await res.json();
+    alert(`Errore delete: ${err.error}`);
+  } else {
+    await loadRows(state.currentTable);
+  }
+}
+
+async function saveChanges() {
+  for (const ch of pendingChanges) {
+    if (ch.type === 'update') {
+      const res = await fetch(`/api/rows/${state.currentTable}/${ch.pk}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ch.data)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`Errore update PK=${ch.pk}: ${err.error}`);
+      }
+    }
+    if (ch.type === 'insert') {
+      const hasValues = Object.values(ch.data).some(v => v !== null && v !== '');
+      if (!hasValues) continue;
+      const res = await fetch(`/api/rows/${state.currentTable}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ch.data)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`Errore insert: ${err.error}`);
+      }
+    }
   }
 
+  pendingChanges = [];
   await loadRows(state.currentTable);
+  alert('Modifiche salvate!');
 }
