@@ -1,75 +1,79 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
-<head>
-  <meta charset="utf-8" />
-  <title>BIM Data Manager (SQLite)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="./styles.css" />
-  <script type="module" src="./js/app.js"></script>
-</head>
-<body>
-  <header>
-    <h1>BIM Data Manager</h1>
-    <div class="subtitle">SQLite + Express • inserimenti semplificati</div>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <title>BIM Data Manager (SQLite)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./js/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>BIM Data Manager</h1>
+      <div class="subtitle">SQLite + Express • inserimenti semplificati</div>
+    </header>
 
-  <main class="layout">
-    <aside>
-      <h2>Tabelle</h2>
-      <ul id="tables"></ul>
+    <main class="layout">
+      <aside>
+        <h2>Tabelle</h2>
+        <ul id="tables"></ul>
 
-      <div class="panel">
-        <h3>Strumenti</h3>
-        <button id="btn-backup">Crea backup</button>
-        <hr />
-        <form id="csv-form">
-          <label>Import CSV nella tabella corrente</label>
-          <input type="file" id="csv-file" accept=".csv" />
-          <button type="submit" id="csv-upload" disabled>Importa CSV</button>
-        </form>
-        <small class="muted">Prima seleziona una tabella.</small>
-      </div>
-
-      <div class="panel">
-        <h3>Gestione legami Pset/Parametri</h3>
-        <button id="btn-matrix">Apri matrice Pset-Parametri</button>
-      </div>
-    </aside>
-
-    <section class="content">
-      <div id="table-header">
-        <h2 id="current-table">Seleziona una tabella</h2>
-        <button id="refresh" disabled>Ricarica</button>
-      </div>
-
-      <div class="toolbar">
-        <input id="search" placeholder="Cerca (testo su colonne TEXT)..." />
-        <select id="page-size">
-          <option value="25">25</option>
-          <option value="50" selected>50</option>
-          <option value="100">100</option>
-        </select>
-        <button id="btn-apply-filter">Applica filtro</button>
-        <div class="pager">
-          <button id="prev-page" disabled>&lt;</button>
-          <span id="page-info">0–0 di 0</span>
-          <button id="next-page" disabled>&gt;</button>
+        <div class="panel">
+          <h3>Strumenti</h3>
+          <button id="btn-backup">Crea backup</button>
+          <hr />
+          <form id="csv-form">
+            <label>Import CSV nella tabella corrente</label>
+            <input type="file" id="csv-file" accept=".csv" />
+            <button type="submit" id="csv-upload" disabled>Importa CSV</button>
+          </form>
+          <small class="muted">Prima seleziona una tabella.</small>
         </div>
-      </div>
 
-      <div id="form-area"></div>
+        <div class="panel">
+          <h3>Gestione legami Pset/Parametri</h3>
+          <button id="btn-matrix">Apri matrice Pset-Parametri</button>
+        </div>
+        <div class="panel">
+          <h3>Gestione legami Codice/Pset</h3>
+          <button id="btn-codice-matrix">Apri matrice Codice-Pset</button>
+        </div>
+      </aside>
 
-      <div id="rows-area">
-        <h3>Righe</h3>
-        <div id="rows"></div>
-      </div>
-    </section>
-  </main>
+      <section class="content">
+        <div id="table-header">
+          <h2 id="current-table">Seleziona una tabella</h2>
+          <button id="refresh" disabled>Ricarica</button>
+        </div>
 
-  <footer>
-    <small>Local dev • DB in <code>/data/MODELLO_DATI.db</code></small>
-  </footer>
+        <div class="toolbar">
+          <input id="search" placeholder="Cerca (testo su colonne TEXT)..." />
+          <select id="page-size">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+          </select>
+          <button id="btn-apply-filter">Applica filtro</button>
+          <div class="pager">
+            <button id="prev-page" disabled>&lt;</button>
+            <span id="page-info">0–0 di 0</span>
+            <button id="next-page" disabled>&gt;</button>
+          </div>
+        </div>
 
-  <script src="./app.js"></script>
-</body>
+        <div id="form-area"></div>
+
+        <div id="rows-area">
+          <h3>Righe</h3>
+          <div id="rows"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <small>Local dev • DB in <code>/data/MODELLO_DATI.db</code></small>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
 </html>

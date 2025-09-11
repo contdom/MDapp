@@ -11,6 +11,10 @@ app.use('/api', require('./routes/rows'));
 app.use('/api', require('./routes/csv'));
 app.use('/api', require('./routes/backup'));
 app.use('/api', require('./routes/psetMatrix'));
+app.use('/api', require('./routes/codicePsetMatrix'));
+app.use('/api', require('./routes/crud'));
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server su http://localhost:${PORT}`));

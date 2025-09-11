@@ -190,3 +190,51 @@ footer {
   border-top: 1px solid #ddd;
   background: #fafafa;
 }
+
+/* Tabella matrice codice-pset */
+.matrix-container {
+  display: flex;
+  gap: 1rem;
+}
+
+.pset-sidebar {
+  width: 200px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  overflow-y: auto;
+  max-height: 80vh;
+}
+
+.pset-item {
+  background: #eee;
+  margin: 0.2rem 0;
+  padding: 0.3rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: grab;
+}
+
+.dropzone {
+  min-height: 40px;
+  background: #fff;
+  border: 1px dashed #ccc;
+  vertical-align: top;
+}
+
+.pset-tag {
+  display: inline-block;
+  background: #3949ab;
+  color: white;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  margin: 0.2rem;
+  font-size: 0.8rem;
+}
+.pset-tag button {
+  background: transparent;
+  border: none;
+  color: white;
+  margin-left: 0.3rem;
+  cursor: pointer;
+}
