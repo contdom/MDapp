@@ -71,12 +71,16 @@ router.put('/rows/:table/:id', (req, res) => {
 
 // DELETE
 router.delete('/rows/:table/:id', (req, res) => {
-  const { id } = req.params;
-  const table = sanitizeIdentifier(req.params.table);
-  if (!table) return res.status(400).json({ error: 'Invalid table name' });
-  const pk = getTableInfo(table).columns.find(c => c.pk === 1)?.name || 'id';
-  const result = db.prepare(`DELETE FROM "${table}" WHERE "${pk}"=?`).run(id);
-  res.json({ deleted: result.changes });
+  try {
+    const { id } = req.params;
+    const table = sanitizeIdentifier(req.params.table);
+    if (!table) return res.status(400).json({ error: 'Invalid table name' });
+    const pk = getTableInfo(table).columns.find(c => c.pk === 1)?.name || 'id';
+    const result = db.prepare(`DELETE FROM "${table}" WHERE "${pk}"=?`).run(id);
+    res.json({ deleted: result.changes });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
 });
 
 module.exports = router;
