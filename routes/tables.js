@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db');
+const { db, getTableInfo, sanitizeIdentifier } = require('../db');
 
 router.get('/tables', (req, res) => {
   const tables = db.prepare(`
@@ -12,12 +12,14 @@ router.get('/tables', (req, res) => {
 });
 
 router.get('/schema/:table', (req, res) => {
-  const { getTableInfo } = require('../db');
-  res.json(getTableInfo(req.params.table));
+  const table = sanitizeIdentifier(req.params.table);
+  if (!table) return res.status(400).json({ error: 'Invalid table name' });
+  res.json(getTableInfo(table));
 });
 
 router.get('/ref/:table/:column', (req, res) => {
-  const { getTableInfo } = require('../db');
+  const table = sanitizeIdentifier(req.params.table);
+  if (!table) return res.status(400).json({ error: 'Invalid table name' });
   const LOOKUP_LABELS = {
     rfi_codice: 'rfi_codice',
     rfi_fase: 'rfi_fase',
@@ -26,7 +28,7 @@ router.get('/ref/:table/:column', (req, res) => {
     unita_misura: 'simbolo'
   };
 
-  const { table, column } = req.params;
+  const { column } = req.params;
   const fk = getTableInfo(table).foreignKeys.find(f => f.from === column);
   if (!fk) return res.json({ options: [] });
 

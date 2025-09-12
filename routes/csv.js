@@ -3,13 +3,14 @@ const router = express.Router();
 const multer = require('multer');
 const { parse } = require('csv-parse/sync');
 const fs = require('fs');
-const { db, getTableInfo } = require('../db');
+const { db, getTableInfo, sanitizeIdentifier } = require('../db');
 
 const upload = multer({ dest: 'uploads/' });
 
 router.post('/import/:table', upload.single('file'), (req, res) => {
   try {
-    const { table } = req.params;
+    const table = sanitizeIdentifier(req.params.table);
+    if (!table) return res.status(400).json({ error: 'Invalid table name' });
     const buf = fs.readFileSync(req.file.path).toString('utf8');
     const records = parse(buf, { columns: true, skip_empty_lines: true });
 
