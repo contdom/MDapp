@@ -147,78 +147,77 @@ async function loadRows(table) {
 }
 
 function renderRows(rows) {
-  const $rows = document.getElementById("rows");
+  const $rows = document.getElementById('rows');
   if (!rows.length && !editMode) {
-    $rows.innerHTML = "<div>Nessuna riga trovata.</div>";
+    $rows.innerHTML = '<div>Nessuna riga trovata.</div>';
     return;
   }
 
-  const cols = state.schema.columns.map((c) => c.name);
-  const pkCol = state.schema.columns.find((c) => c.pk === 1)?.name || "id";
-  const fkCols = new Set((state.schema.foreignKeys || []).map((f) => f.from));
+  const cols = state.schema.columns.map(c => c.name);
+  const pkCol = state.schema.columns.find(c => c.pk === 1)?.name || 'id';
+  const fkCols = new Set((state.schema.foreignKeys || []).map(f => f.from));
 
-  const table = document.createElement("table");
-  table.className = "table";
+  const table = document.createElement('table');
+  table.className = 'table';
 
-  const thead = document.createElement("thead");
-  const trh = document.createElement("tr");
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
   for (const c of cols) {
-    const th = document.createElement("th");
-    th.textContent = fkCols.has(c) ? c.replace(/_id$/, "") : c;
+    const th = document.createElement('th');
+    th.textContent = fkCols.has(c) ? c.replace(/_id$/,'') : c;
     trh.appendChild(th);
   }
   if (editMode) {
-    const th = document.createElement("th");
-    th.textContent = "Azioni";
+    const th = document.createElement('th');
+    th.textContent = 'Azioni';
     trh.appendChild(th);
   }
   thead.appendChild(trh);
   table.appendChild(thead);
 
-  const tbody = document.createElement("tbody");
+  const tbody = document.createElement('tbody');
   for (const r of rows) {
-    const tr = document.createElement("tr");
+    const tr = document.createElement('tr');
     for (const c of cols) {
-      const td = document.createElement("td");
+      const td = document.createElement('td');
       const rawVal = r[c];
 
       if (editMode && c !== pkCol) {
         if (fkCols.has(c) && state.fkMap[c]) {
-          const select = document.createElement("select");
-          const empty = document.createElement("option");
-          empty.value = "";
-          empty.textContent = "--";
+          const select = document.createElement('select');
+          const empty = document.createElement('option');
+          empty.value = '';
+          empty.textContent = '--';
           select.appendChild(empty);
 
-          state.fkMap[c].options.forEach((opt) => {
-            const o = document.createElement("option");
+          state.fkMap[c].options.forEach(opt => {
+            const o = document.createElement('option');
             o.value = opt.id;
-            o.textContent = opt.label;
-            if (opt.label === rawVal || String(opt.id) === String(rawVal))
-              o.selected = true;
+            o.textContent = `${opt.label} (${opt.id})`; // 👈 label + id
+            if (opt.label === rawVal || String(opt.id) === String(rawVal)) o.selected = true;
             select.appendChild(o);
           });
 
-          select.onchange = () =>
-            markChange("update", r[pkCol], c, select.value);
+          select.onchange = () => markChange('update', r[pkCol], c, select.value);
           td.appendChild(select);
         } else {
-          const input = document.createElement("input");
-          input.type = inputTypeFor(
-            state.schema.columns.find((col) => col.name === c).type
-          );
-          input.value = rawVal ?? "";
-          input.onchange = () => markChange("update", r[pkCol], c, input.value);
+          const input = document.createElement('input');
+          input.type = inputTypeFor(state.schema.columns.find(col => col.name === c).type);
+          input.value = rawVal ?? '';
+          input.onchange = () => markChange('update', r[pkCol], c, input.value);
           td.appendChild(input);
         }
       } else {
         if (fkCols.has(c) && state.fkMap[c]) {
-          const opt = state.fkMap[c].options.find(
-            (o) => o.label === rawVal || String(o.id) === String(rawVal)
-          );
-          td.textContent = opt ? opt.label : rawVal ?? "";
+          const opt = state.fkMap[c].options.find(o => o.label === rawVal || String(o.id) === String(rawVal));
+          if (opt) {
+            // 👇 mostra label + ID piccolo
+            td.innerHTML = `${opt.label} <span style="color:#888;font-size:0.7em;">(${opt.id})</span>`;
+          } else {
+            td.textContent = rawVal ?? '';
+          }
         } else {
-          td.textContent = rawVal ?? "";
+          td.textContent = rawVal ?? '';
         }
       }
 
@@ -226,9 +225,9 @@ function renderRows(rows) {
     }
 
     if (editMode) {
-      const tdAct = document.createElement("td");
-      const btnDel = document.createElement("button");
-      btnDel.textContent = "🗑️";
+      const tdAct = document.createElement('td');
+      const btnDel = document.createElement('button');
+      btnDel.textContent = '🗑️';
       btnDel.onclick = () => deleteRow(r[pkCol]);
       tdAct.appendChild(btnDel);
       tr.appendChild(tdAct);
@@ -238,9 +237,10 @@ function renderRows(rows) {
   }
 
   table.appendChild(tbody);
-  $rows.innerHTML = "";
+  $rows.innerHTML = '';
   $rows.appendChild(table);
 }
+
 
 function markChange(type, pk, col, value) {
   let change = pendingChanges.find((c) => c.type === type && c.pk === pk);
