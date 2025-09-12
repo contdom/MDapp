@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { db, getTableInfo } = require('../db');
+const { db, getTableInfo, sanitizeIdentifier } = require('../db');
 
 // GET rows con filtro e paginazione
 router.get('/rows/:table', (req, res) => {
   try {
-    const { table } = req.params;
+    const table = sanitizeIdentifier(req.params.table);
+    if (!table) return res.status(400).json({ error: 'Invalid table name' });
     const limit = Math.min(parseInt(req.query.limit || '50'), 200);
     const offset = parseInt(req.query.offset || '0');
     const q = (req.query.q || '').trim();
@@ -33,7 +34,8 @@ router.get('/rows/:table', (req, res) => {
 // POST insert
 router.post('/rows/:table', (req, res) => {
   try {
-    const { table } = req.params;
+    const table = sanitizeIdentifier(req.params.table);
+    if (!table) return res.status(400).json({ error: 'Invalid table name' });
     const payload = req.body || {};
     const info = getTableInfo(table).columns.filter(c => c.pk === 0).map(c => c.name);
     const keys = info.filter(k => payload[k] !== undefined);
@@ -51,7 +53,9 @@ router.post('/rows/:table', (req, res) => {
 // PUT update
 router.put('/rows/:table/:id', (req, res) => {
   try {
-    const { table, id } = req.params;
+    const { id } = req.params;
+    const table = sanitizeIdentifier(req.params.table);
+    if (!table) return res.status(400).json({ error: 'Invalid table name' });
     const payload = req.body || {};
     const pk = getTableInfo(table).columns.find(c => c.pk === 1)?.name || 'id';
     const keys = Object.keys(payload);
@@ -67,7 +71,9 @@ router.put('/rows/:table/:id', (req, res) => {
 
 // DELETE
 router.delete('/rows/:table/:id', (req, res) => {
-  const { table, id } = req.params;
+  const { id } = req.params;
+  const table = sanitizeIdentifier(req.params.table);
+  if (!table) return res.status(400).json({ error: 'Invalid table name' });
   const pk = getTableInfo(table).columns.find(c => c.pk === 1)?.name || 'id';
   const result = db.prepare(`DELETE FROM "${table}" WHERE "${pk}"=?`).run(id);
   res.json({ deleted: result.changes });

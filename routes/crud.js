@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db');
+const { db, sanitizeIdentifier } = require('../db');
 
 const PREFERRED_LABELS = {
   rfi_codice: 'rfi_codice',
@@ -55,7 +55,8 @@ router.get('/tables', (req, res) => {
 
 // GET schema tabella
 router.get('/schema/:table', (req, res) => {
-  const { table } = req.params;
+  const table = sanitizeIdentifier(req.params.table);
+  if (!table) return res.status(400).json({ error: 'Invalid table name' });
   const columns = db.prepare(`PRAGMA table_info(${quote(table)})`).all();
   const foreignKeys = db.prepare(`PRAGMA foreign_key_list(${quote(table)})`).all();
   res.json({ columns, foreignKeys });
@@ -63,7 +64,9 @@ router.get('/schema/:table', (req, res) => {
 
 // GET ref options per FK
 router.get('/ref/:table/:column', (req, res) => {
-  const { table, column } = req.params;
+  const table = sanitizeIdentifier(req.params.table);
+  if (!table) return res.status(400).json({ error: 'Invalid table name' });
+  const { column } = req.params;
   const fks = db.prepare(`PRAGMA foreign_key_list(${quote(table)})`).all();
   const fk = fks.find(f => f.from === column);
   if (!fk) return res.json({ options: [] });
@@ -79,7 +82,8 @@ router.get('/ref/:table/:column', (req, res) => {
 
 // GET righe con traduzione FK -> label
 router.get('/rows/:table', (req, res) => {
-  const { table } = req.params;
+  const table = sanitizeIdentifier(req.params.table);
+  if (!table) return res.status(400).json({ error: 'Invalid table name' });
   const limit = Math.min(parseInt(req.query.limit || '50'), 500);
   const offset = parseInt(req.query.offset || '0');
   const q = (req.query.q || '').trim();
@@ -123,7 +127,8 @@ router.get('/rows/:table', (req, res) => {
 // POST nuova riga
 router.post('/rows/:table', (req, res) => {
   try {
-    const { table } = req.params;
+    const table = sanitizeIdentifier(req.params.table);
+    if (!table) return res.status(400).json({ error: 'Invalid table name' });
     const body = req.body || {};
     const cols = Object.keys(body);
     if (!cols.length) return res.status(400).json({ error: 'Nessun dato' });
@@ -137,7 +142,9 @@ router.post('/rows/:table', (req, res) => {
 // PUT aggiorna riga
 router.put('/rows/:table/:id', (req, res) => {
   try {
-    const { table, id } = req.params;
+    const { id } = req.params;
+    const table = sanitizeIdentifier(req.params.table);
+    if (!table) return res.status(400).json({ error: 'Invalid table name' });
     const body = req.body || {};
     const cols = Object.keys(body);
     if (!cols.length) return res.status(400).json({ error: 'Nessun campo da aggiornare' });
@@ -151,7 +158,9 @@ router.put('/rows/:table/:id', (req, res) => {
 // DELETE riga
 router.delete('/rows/:table/:id', (req, res) => {
   try {
-    const { table, id } = req.params;
+    const { id } = req.params;
+    const table = sanitizeIdentifier(req.params.table);
+    if (!table) return res.status(400).json({ error: 'Invalid table name' });
     const pk = pkOf(table);
     const r = db.prepare(`DELETE FROM ${quote(table)} WHERE ${quote(pk)}=?`).run(id);
     res.json({ deleted: r.changes });
