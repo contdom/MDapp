@@ -1,3 +1,9 @@
+// Editor a matrice Codice × Fase per i pset associati a un codice
+// (rfi_codice_pset): drag&drop di un pset dalla sidebar dentro una cella
+// per aggiungerlo, ❌ sul tag per rimuoverlo. Ogni azione richiama subito
+// l'API e ridisegna l'intera matrice (nessuno stato "non salvato").
+import { toast } from "./notify.js";
+
 export function initCodiceMatrix() {
   const btn = document.getElementById('btn-codice-matrix');
   if (btn) btn.onclick = renderCodiceMatrix;
@@ -49,7 +55,7 @@ export async function renderCodiceMatrix() {
       td.ondrop = async e => {
         e.preventDefault();
         const psetId = Number(e.dataTransfer.getData('pset_id'));
-        await fetch('/api/codice-pset-add', {
+        const res = await fetch('/api/codice-pset-add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -58,6 +64,11 @@ export async function renderCodiceMatrix() {
             pset_id: psetId
           })
         });
+        if (!res.ok) {
+          const err = await res.json();
+          toast(`Errore aggiunta pset: ${err.error}`, 'error');
+          return;
+        }
         renderCodiceMatrix(); // ricarica
       };
 
@@ -69,8 +80,10 @@ export async function renderCodiceMatrix() {
 
         const btnX = document.createElement('button');
         btnX.textContent = '❌';
+        btnX.title = `Rimuovi ${p.label}`;
+        btnX.setAttribute('aria-label', `Rimuovi ${p.label}`);
         btnX.onclick = async () => {
-          await fetch('/api/codice-pset-remove', {
+          const res = await fetch('/api/codice-pset-remove', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -79,6 +92,11 @@ export async function renderCodiceMatrix() {
               pset_id: p.id
             })
           });
+          if (!res.ok) {
+            const err = await res.json();
+            toast(`Errore rimozione pset: ${err.error}`, 'error');
+            return;
+          }
           renderCodiceMatrix();
         };
 

@@ -1,4 +1,7 @@
-let pendingUpdates = [];
+// Editor a matrice Pset × Fase per i parametri già legati a un pset
+// (rfi_pset_parametri): ogni checkbox è un toggle che chiama subito l'API,
+// senza stato "non salvato" — a differenza del CRUD generico in crud.js.
+import { toast } from "./notify.js";
 
 export function initMatrix() {
   document.getElementById('btn-matrix').onclick = renderPsetParametriMatrix;
@@ -48,7 +51,7 @@ async function renderPsetParametriMatrix() {
             body: JSON.stringify({ updates: payload })
           });
           if (!res.ok) {
-            alert('Errore aggiornamento');
+            toast('Errore aggiornamento', 'error');
             cb.checked = !cb.checked; // rollback
           }
         };

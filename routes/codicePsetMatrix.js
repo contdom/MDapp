@@ -1,6 +1,12 @@
+// Vista/editor a matrice per i legami Codice↔Pset↔Fase (tabella
+// rfi_codice_pset), usata da public/js/codiceMatrix.js. Stessa logica di
+// psetMatrix.js ma su un dominio diverso: qui una cella può contenere più
+// pset per lo stesso codice/fase, quindi add/remove sono endpoint singoli
+// invece di un update batch.
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db');
+const { sendError } = require('../db/errors');
 
 // GET matrice codice-pset
 router.get('/codice-pset-matrix', (req, res) => {
@@ -23,12 +29,10 @@ router.get('/codice-pset-matrix', (req, res) => {
     }));
 
     res.json({ fasi, codici: result, psets });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { sendError(res, 500, e); }
 });
 
-// POST aggiungi pset
+// POST aggiungi pset a una cella (codice+fase)
 router.post('/codice-pset-add', (req, res) => {
   try {
     const { codice_id, fase_id, pset_id } = req.body;
@@ -37,12 +41,10 @@ router.post('/codice-pset-add', (req, res) => {
       VALUES (?,?,?)
     `).run(codice_id, pset_id, fase_id);
     res.json({ ok: true });
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+  } catch (e) { sendError(res, 400, e); }
 });
 
-// DELETE rimuovi pset
+// DELETE rimuovi pset da una cella
 router.delete('/codice-pset-remove', (req, res) => {
   try {
     const { codice_id, fase_id, pset_id } = req.body;
@@ -51,10 +53,7 @@ router.delete('/codice-pset-remove', (req, res) => {
       WHERE rfi_codice_id=? AND rfi_pset_id=? AND rfi_fase_id=?
     `).run(codice_id, pset_id, fase_id);
     res.json({ ok: true });
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+  } catch (e) { sendError(res, 400, e); }
 });
 
 module.exports = router;
-

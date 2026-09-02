@@ -1,19 +1,24 @@
+// Vista/editor a matrice per i legami Pset↔Parametro↔Fase (tabella
+// rfi_pset_parametri), usata da public/js/matrix.js. A differenza delle
+// route generiche in rows.js, queste sono scritte apposta per questo
+// dominio: query dirette sulle tabelle rfi_* invece che introspezione
+// generica dello schema.
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db');
+const { sendError } = require('../db/errors');
 
-// GET matrice pset-parametri
+// GET matrice pset-parametri: per ogni pset, i parametri effettivamente
+// legati e per ciascuno quali fasi sono già spuntate.
 router.get('/pset-parametri-matrix', (req, res) => {
   try {
     const psets = db.prepare(`SELECT * FROM rfi_pset ORDER BY rfi_pset`).all();
     const fasi = db.prepare(`SELECT * FROM rfi_fase ORDER BY ordine`).all();
 
-    // recupero legami esistenti
     const legami = db.prepare(`
       SELECT * FROM rfi_pset_parametri
     `).all();
 
-    // prendo i parametri effettivamente legati a ciascun pset
     const rows = db.prepare(`
       SELECT DISTINCT p.*, l.rfi_pset_id
       FROM rfi_parametri p
@@ -37,13 +42,11 @@ router.get('/pset-parametri-matrix', (req, res) => {
     });
 
     res.json({ fasi, psets: result });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { sendError(res, 500, e); }
 });
 
-
-// POST aggiornamento matrice
+// POST aggiornamento matrice: ogni update è un toggle (checked=true inserisce
+// il legame, checked=false lo rimuove), applicati tutti in una transazione.
 router.post('/pset-parametri-matrix', (req, res) => {
   try {
     const { updates } = req.body;
@@ -63,8 +66,7 @@ router.post('/pset-parametri-matrix', (req, res) => {
     tx(updates);
 
     res.json({ ok: true, count: updates.length });
-  } catch (e) { res.status(400).json({ error: e.message }); }
+  } catch (e) { sendError(res, 400, e); }
 });
-
 
 module.exports = router;

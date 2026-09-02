@@ -19,31 +19,31 @@
         <ul id="tables"></ul>
 
         <div class="panel">
-          <h3>Strumenti</h3>
-          <button id="btn-backup">Crea backup</button>
+          <h3>🛠️ Strumenti</h3>
+          <button id="btn-backup" class="btn-secondary">💾 Crea backup</button>
           <hr />
           <form id="csv-form">
             <label>Import CSV nella tabella corrente</label>
             <input type="file" id="csv-file" accept=".csv" />
-            <button type="submit" id="csv-upload" disabled>Importa CSV</button>
+            <button type="submit" id="csv-upload" class="btn-primary" disabled>📥 Importa CSV</button>
           </form>
           <small class="muted">Prima seleziona una tabella.</small>
         </div>
 
         <div class="panel">
-          <h3>Gestione legami Pset/Parametri</h3>
-          <button id="btn-matrix">Apri matrice Pset-Parametri</button>
+          <h3>🔗 Legami Pset/Parametri</h3>
+          <button id="btn-matrix" class="btn-secondary">Apri matrice Pset-Parametri</button>
         </div>
         <div class="panel">
-          <h3>Gestione legami Codice/Pset</h3>
-          <button id="btn-codice-matrix">Apri matrice Codice-Pset</button>
+          <h3>🧩 Legami Codice/Pset</h3>
+          <button id="btn-codice-matrix" class="btn-secondary">Apri matrice Codice-Pset</button>
         </div>
       </aside>
 
       <section class="content">
         <div id="table-header">
           <h2 id="current-table">Seleziona una tabella</h2>
-          <button id="refresh" disabled>Ricarica</button>
+          <button id="refresh" class="btn-secondary" disabled>🔄 Ricarica</button>
         </div>
 
         <div class="toolbar">
@@ -53,11 +53,11 @@
             <option value="50" selected>50</option>
             <option value="100">100</option>
           </select>
-          <button id="btn-apply-filter">Applica filtro</button>
+          <button id="btn-apply-filter" class="btn-secondary">Applica filtro</button>
           <div class="pager">
-            <button id="prev-page" disabled>&lt;</button>
+            <button id="prev-page" class="btn-ghost btn-icon" disabled>&lt;</button>
             <span id="page-info">0–0 di 0</span>
-            <button id="next-page" disabled>&gt;</button>
+            <button id="next-page" class="btn-ghost btn-icon" disabled>&gt;</button>
           </div>
         </div>
 
@@ -73,7 +73,5 @@
     <footer>
       <small>Local dev • DB in <code>/data/MODELLO_DATI.db</code></small>
     </footer>
-
-    <script src="./app.js"></script>
   </body>
 </html>
